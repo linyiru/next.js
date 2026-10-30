@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use tracing::{Instrument, Level, Span};
 use turbo_rcstr::{RcStr, rcstr};
 use turbo_tasks::{
-    CollectiblesSource, FxIndexMap, JoinIterExt, NonLocalValue, OperationVc, ReadRef, ResolvedVc,
+    CollectiblesSource, JoinIterExt, NonLocalValue, OperationVc, ReadRef, ResolvedVc,
     TryFlatJoinIterExt, TryJoinIterExt, ValueToString, Vc,
     debug::ValueDebugFormat,
     graph::{AdjacencyMap, GraphTraversal, Visit, VisitControlFlow},
@@ -107,8 +107,7 @@ impl GraphEdgeIndex {
 #[turbo_tasks::value]
 #[derive(Clone, Debug)]
 pub struct VisitedModules {
-    #[bincode(with = "turbo_bincode::indexmap")]
-    pub modules: FxIndexMap<ResolvedVc<Box<dyn Module>>, GraphNodeIndex>,
+    pub modules: FxHashMap<ResolvedVc<Box<dyn Module>>, GraphNodeIndex>,
     next_graph_idx: u32,
 }
 
@@ -182,7 +181,7 @@ impl VisitedModules {
                     }),
             );
 
-        let mut map = FxIndexMap::with_capacity_and_hasher(
+        let mut map = FxHashMap::with_capacity_and_hasher(
             this.modules.len() + graph.number_of_modules,
             Default::default(),
         );
@@ -334,7 +333,7 @@ impl SingleModuleGraph {
     /// The resulting graph's outgoing edges are in reverse order.
     async fn new_inner(
         entries: &GraphEntries,
-        visited_modules: &FxIndexMap<ResolvedVc<Box<dyn Module>>, GraphNodeIndex>,
+        visited_modules: &FxHashMap<ResolvedVc<Box<dyn Module>>, GraphNodeIndex>,
         include_traced: bool,
         include_binding_usage: bool,
     ) -> Result<Vc<Self>> {
@@ -1991,7 +1990,7 @@ impl SingleModuleGraphBuilderNode {
 }
 
 struct SingleModuleGraphBuilder<'a> {
-    visited_modules: &'a FxIndexMap<ResolvedVc<Box<dyn Module>>, GraphNodeIndex>,
+    visited_modules: &'a FxHashMap<ResolvedVc<Box<dyn Module>>, GraphNodeIndex>,
 
     emit_spans: bool,
 
